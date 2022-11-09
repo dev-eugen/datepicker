@@ -1,6 +1,6 @@
 {
-  "name": "@vuepic/vue-datepicker",
-  "version": "3.5.3",
+  "name": "@jonyak/datepicker",
+  "version": "1.0.0",
   "description": "Datepicker component for Vue 3",
   "author": "Vuepic",
   "private": false,
@@ -93,7 +93,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Vuepic/vue-datepicker.git"
+    "url": "git+https://github.com/Vuepic/vue-datepicker.git"
   },
   "keywords": [
     "vue",
@@ -108,5 +108,12 @@
     "> 1%",
     "last 2 versions",
     "not dead"
-  ]
+  ],
+  "bugs": {
+    "url": "https://github.com/Vuepic/vue-datepicker/issues"
+  },
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  }
 }
