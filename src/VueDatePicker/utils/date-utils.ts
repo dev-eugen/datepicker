@@ -194,9 +194,8 @@ export const formatDate = (
     modelAuto?: boolean,
 ): string => {
     if (Array.isArray(value)) {
-        return `${formatFn(value[0], pattern, locale)} ${
-            modelAuto && !value[1] ? '' : textInputSeparator ? textInputSeparator : '-'
-        } ${value[1] ? formatFn(value[1], pattern, locale) : ''}`;
+        return `${formatFn(value[0], pattern, locale)} ${modelAuto && !value[1] ? '' : textInputSeparator ? textInputSeparator : '-'
+            } ${value[1] ? formatFn(value[1], pattern, locale) : ''}`;
     }
 
     return formatFn(value, pattern, locale);
@@ -225,7 +224,7 @@ export const isDateEqual = (date: Date | string | null, dateToCompare: Date | st
 
 export const addTime = (initial: Record<string, number>, toAdd: Duration) => add(set(new Date(), initial), toAdd);
 
-export const subTime = (initial: Record<string, number>, toSub: Duration) => sub(set(new Date(), initial), toSub);
+export const subTime = (initial: Record<string, number>, tob: Duration) => sub(set(new Date(), initial), tob);
 
 const setTimeValue = (date: Date): Date =>
     set(new Date(), { hours: getHours(date), minutes: getMinutes(date), seconds: getSeconds(date) });

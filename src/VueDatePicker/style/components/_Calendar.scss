@@ -74,8 +74,8 @@
 }
 
 %__dp_active {
-  background: var(--dp-primary-color);
-  color: var(--dp-primary-text-color);
+  background: var(--dp-active-color);
+  color: var(--dp-text-color);
 }
 
 %__dp_range_preview {
@@ -193,10 +193,13 @@
 }
 
 .dp__marker_dot {
-  width: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  position: absolute;
+  top: 0;
+  transform: translateX(200%);
 
   @extend %__dp_marker;
 }
