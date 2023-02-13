@@ -19,7 +19,7 @@ $dp__common_padding: 10px !default;
 $dp__input_padding: 6px 12px !default; // padding in the input
 $dp__input_icon_padding: 35px !default; // Padding on the left side of the input if icon is present
 $dp__menu_min_width: 260px !default; // Adjust the min width of the menu
-$dp__action_buttons_padding: 2px 5px !default; // Adjust padding for the action buttons in action row
+$dp__action_buttons_padding: 8px 12px !default; // Adjust padding for the action buttons in action row
 $dp__row_margin: 5px 0 !default; // Adjust the spacing between rows in the calendar
 $dp__calendar_header_cell_padding: 0.5rem !default; // Adjust padding in calendar header cells
 $dp__two_calendars_spacing: 10px !default; // Space between two calendars if using two calendars
@@ -27,6 +27,6 @@ $dp__overlay_col_padding: 3px !default; // Padding in the overlay column
 $dp__time_inc_dec_button_size: 32px !default; // Sizing for arrow buttons in the time picker
 
 // Font sizes
-$dp__font_size: 1rem !default; // overall font-size
+$dp__font_size: 14px !default; // overall font-size
 $dp__preview_font_size: 0.8rem !default; // font size of the date preview in the action row
 $dp__time_font_size: 2rem !default; // font size in the time picker

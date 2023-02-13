@@ -10,7 +10,7 @@
 .dp__theme_dark {
   --dp-background-color: #212121;
   --dp-text-color: #fff;
-  --dp-hover-color: #484848;
+  --dp-hover-color: #E6EDFE;
   --dp-hover-text-color: #fff;
   --dp-hover-icon-color: #959595;
   --dp-primary-color: #005cb2;
@@ -36,7 +36,7 @@
 .dp__theme_light {
   --dp-background-color: #fff;
   --dp-text-color: #212121;
-  --dp-hover-color: #f3f3f3;
+  --dp-hover-color: #E6EDFE;
   --dp-hover-text-color: #212121;
   --dp-hover-icon-color: #959595;
   --dp-primary-color: #0047FD;
@@ -57,7 +57,7 @@
   --dp-tooltip-color: #fafafa;
   --dp-disabled-color-text: #8e8e8e;
   --dp-highlight-color: rgb(25 118 210 / 10%);
-  --dp-active-color: #E6EDFE;
+  --dp-active-color: #0A64EC;
 }
 
 .dp__main {
@@ -72,8 +72,8 @@
 
 // Allow control of color property on icons
 .dp__icon {
-  stroke: currentcolor;
-  fill: currentcolor;
+  stroke: var(--dp-primary-color);
+  fill: var(--dp-primary-color);
 }
 
 // Div style that is displayed on the bottom of the menu for switching layouts

@@ -1,8 +1,12 @@
 .dp__action_row {
   display: flex;
+  flex-direction: column;
   align-items: center;
   width: 100%;
   padding: $dp__common_padding;
+  padding-top: 0px;
+  padding-left: 32px;
+  padding-right: 32px;
   box-sizing: border-box;
   color: var(--dp-text-color);
   background: var(--dp-background-color);
@@ -14,13 +18,15 @@
 }
 
 .dp__selection_preview {
-  width: 50%;
   color: var(--dp-text-color);
+  margin: 6px 0px 12px 0px;
   font-size: $dp__preview_font_size;
 }
 
 .dp__action_buttons {
-  width: 50%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
   text-align: right;
 }
 
@@ -34,7 +40,8 @@
 }
 
 .dp__select {
-  color: var(--dp-success-color);
+  color: var(--dp-primary-text-color);
+  background-color: var(--dp-primary-color);
 }
 
 .dp__action_disabled {
@@ -43,5 +50,6 @@
 }
 
 .dp__cancel {
-  color: var(--dp-secondary-color);
+  color: var(--dp-primary-color);
+  margin-right: 16px;
 }

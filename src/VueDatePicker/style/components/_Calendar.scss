@@ -12,9 +12,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  color: var(--dp-text-color);
+  /* color: var(--dp-text-color); */
+  color: #464B4E;
   white-space: nowrap;
-  font-weight: bold;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 4px 0px;
+  border-bottom: 1px solid #DDE0E2;
+  border-top: 1px solid #DDE0E2;
 }
 
 .dp__calendar_header_item {
@@ -75,7 +80,7 @@
 
 %__dp_active {
   background: var(--dp-active-color);
-  color: var(--dp-text-color);
+  color: var(--dp-primary-text-color);
 }
 
 %__dp_range_preview {
@@ -196,10 +201,9 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  left: 50%;
   position: absolute;
   top: 0;
-  transform: translateX(200%);
+  right: 0;
 
   @extend %__dp_marker;
 }
