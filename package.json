@@ -1,11 +1,10 @@
 {
-  "name": "@jonyak/datepicker",
-  "version": "1.0.0",
+  "name": "@devheniik/datepicker",
+  "version": "0.0.0-beta.1",
   "description": "Datepicker component for Vue 3",
-  "author": "Vuepic",
+  "author": "Vuepic && Devheniik",
   "private": false,
   "license": "MIT",
-  "homepage": "https://vue3datepicker.com",
   "types": "index.d.ts",
   "type": "module",
   "main": "dist/vue-datepicker.umd.cjs",
@@ -16,7 +15,7 @@
   "sass": "src/VueDatePicker/style/main.scss",
   "files": [
     "dist/*",
-    "src/**/*",
+    "package.json",
     "index.d.ts"
   ],
   "exports": {
