@@ -38,6 +38,7 @@
                 <slot :name="slot" v-bind="args" />
             </template>
         </DatepickerInput>
+        {{ teleport }}
         <component :is="teleport ? teleport : 'div'" v-bind="menuWrapProps" v-if="isOpen">
             <DatepickerMenu
                 v-if="isOpen"

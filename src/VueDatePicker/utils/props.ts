@@ -197,7 +197,7 @@ export const AllProps = {
     closeOnScroll: { type: Boolean as PropType<boolean>, default: false },
     autoPosition: { type: Boolean as PropType<boolean>, default: true },
     closeOnAutoApply: { type: Boolean as PropType<boolean>, default: true },
-    teleport: { type: [String, Object] as PropType<string | HTMLElement>, default: 'body' },
+    teleport: { type: [String, Object] as PropType<string | HTMLElement>, default: null },
     altPosition: { type: [Boolean, Function] as PropType<AltPosition>, default: false },
     transitions: { type: [Boolean, Object] as PropType<boolean | ITransition>, default: true },
     formatLocale: { type: Object as PropType<Locale>, default: null },
