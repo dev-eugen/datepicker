@@ -38,7 +38,7 @@
                 <slot :name="slot" v-bind="args" />
             </template>
         </DatepickerInput>
-        <teleport :to="teleport" :disabled="inline" v-if="isOpen">
+        <component :is="teleport ? teleport : 'div'" v-bind="menuWrapProps" v-if="isOpen">
             <DatepickerMenu
                 v-if="isOpen"
                 ref="dpMenuRef"
@@ -149,7 +149,7 @@
                     <slot :name="slot" v-bind="{ ...args }" />
                 </template>
             </DatepickerMenu>
-        </teleport>
+        </component>
     </div>
 </template>
 
@@ -298,6 +298,16 @@
             dp__flex_display_with_input: props.inlineWithInput,
         }),
     );
+
+    const menuWrapProps = computed(() => {
+        if (props.teleport) {
+            return {
+                to: typeof props.teleport === 'boolean' ? 'body' : props.teleport,
+                disabled: props.inline,
+            };
+        }
+        return { class: 'dp__outer_menu_wrap' };
+    });
 
     const defaultPattern = computed((): string => {
         return isString(props.format)
