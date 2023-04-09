@@ -38,7 +38,7 @@
                 <slot :name="slot" v-bind="args" />
             </template>
         </DatepickerInput>
-        <teleport :to="teleport" :disabled="inline" v-if="isOpen">
+        <div :disabled="inline" v-if="isOpen">
             <DatepickerMenu
                 v-if="isOpen"
                 ref="dpMenuRef"
@@ -149,7 +149,7 @@
                     <slot :name="slot" v-bind="{ ...args }" />
                 </template>
             </DatepickerMenu>
-        </teleport>
+        </div>
     </div>
 </template>
 

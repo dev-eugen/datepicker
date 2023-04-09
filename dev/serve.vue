@@ -1,7 +1,8 @@
 <template>
     <div class="wrapper">
         <Datepicker
-v-model="selectedDate"  :markers=" [
+            v-model="selectedDate"
+            :markers="[
                 {
                     date: addDays(new Date(), 1),
                     type: 'dot',
