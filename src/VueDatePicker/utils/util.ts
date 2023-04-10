@@ -1,65 +1,7 @@
 import { unref } from 'vue';
+
+import type { IDefaultSelect, IMarker, MaybeElementRef, ModelValue } from '@/interfaces';
 import type { ComponentPublicInstance } from 'vue';
-import { addDays, getMonth, startOfWeek } from 'date-fns';
-
-import type {
-    AreaLabels,
-    ICalendarDate,
-    ICalendarDay,
-    IDateFilter,
-    IDefaultSelect,
-    IMarker,
-    ITextInputOptions,
-    ITransition,
-    MaybeElementRef,
-    ModelValue,
-    WeekStartNum,
-} from '@/interfaces';
-import { isDateEqual, resetDateTime } from './date-utils';
-
-// Get 7 days from the provided start date, month is used to check whether the date is from the specified month or in the offset
-const getWeekDays = (startDay: Date, month: number, hideOffsetDates: boolean): ICalendarDay[] => {
-    const startDate = new Date(JSON.parse(JSON.stringify(startDay)));
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
-        const next = addDays(startDate, i);
-        const isNext = getMonth(next) !== month;
-        dates.push({
-            text: hideOffsetDates && isNext ? '' : next.getDate(),
-            value: next,
-            current: !isNext,
-        });
-    }
-    return dates;
-};
-
-// Get days for the calendar to be displayed in a table grouped by weeks
-export const getCalendarDays = (
-    month: number,
-    year: number,
-    start: WeekStartNum,
-    hideOffsetDates: boolean,
-): ICalendarDate[] => {
-    const weeks: ICalendarDate[] = [];
-    const firstDate = new Date(year, month);
-    const lastDate = new Date(year, month + 1, 0);
-
-    const firstDateInCalendar = startOfWeek(firstDate, { weekStartsOn: start });
-
-    const addDaysToWeek = (date: Date) => {
-        const days = getWeekDays(date, month, hideOffsetDates);
-        weeks.push({ days });
-        if (
-            !weeks[weeks.length - 1].days.some((day) => isDateEqual(resetDateTime(day.value), resetDateTime(lastDate)))
-        ) {
-            const nextDate = addDays(date, 7);
-            addDaysToWeek(nextDate);
-        }
-    };
-    addDaysToWeek(firstDateInCalendar);
-
-    return weeks;
-};
 
 export const getArrayInArray = <T>(list: T[], increment = 3): T[][] => {
     const items = [];
@@ -93,12 +35,12 @@ export const getDayNames = (locale: string, weekStart: number): string[] => {
 /**
  * Generate array of years for selection display
  */
-export const getYears = (yearRange: number[] | string[]): IDefaultSelect[] => {
+export const getYears = (yearRange: number[] | string[], reverse?: boolean): IDefaultSelect[] => {
     const years: IDefaultSelect[] = [];
     for (let year = +yearRange[0]; year <= +yearRange[1]; year++) {
         years.push({ value: +year, text: `${year}` });
     }
-    return years;
+    return reverse ? years.reverse() : years;
 };
 
 /**
@@ -125,87 +67,32 @@ export const hoursToAmPmHours = (index: number): number => {
     return hoursValues[index];
 };
 
-/**
- * Default options to merge with user provided ones
- */
-export const getDefaultTextInputOptions = (): ITextInputOptions => ({
-    enterSubmit: true,
-    tabSubmit: true,
-    openMenu: true,
-    rangeSeparator: ' - ',
-});
-
-/**
- * Default filters to merge with user provided values
- */
-export const getDefaultFilters = (filters: Partial<IDateFilter>): IDateFilter =>
-    Object.assign({ months: [], years: [], times: { hours: [], minutes: [], seconds: [] } }, filters);
-
-/**
- * For v-for loops randomize string value
- */
-export const getKey = (index: number): string => {
-    const len = 5;
-    function makeKey(length: number): string {
-        let result = '';
-        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        const charactersLength = characters.length;
-        for (let i = 0; i < length; i++) {
-            result += characters.charAt(Math.floor(Math.random() * charactersLength));
-        }
-        return result + index;
-    }
-    return makeKey(len);
-};
-
 export const unrefElement = (elRef: MaybeElementRef): HTMLElement | null => {
     const plain = unref(elRef);
-    return (plain as ComponentPublicInstance)?.$el ?? plain;
+    if (!(plain as ComponentPublicInstance)?.$el) return plain as HTMLElement | null;
+    return (plain as ComponentPublicInstance)?.$el;
 };
 
 export const getDefaultMarker = (marker: IMarker): IMarker => Object.assign({ type: 'dot' }, marker);
-
-export const mergeDefaultTransitions = (conf: Partial<ITransition>): ITransition =>
-    Object.assign(
-        {
-            menuAppear: 'dp-menu-appear',
-            open: 'dp-slide-down',
-            close: 'dp-slide-up',
-            next: 'calendar-next',
-            previous: 'calendar-prev',
-            vNext: 'dp-slide-up',
-            vPrevious: 'dp-slide-down',
-        },
-        conf,
-    );
-
-export const defaultAriaLabels = (labels: Partial<AreaLabels>): AreaLabels => {
-    return Object.assign(
-        {
-            toggleOverlay: 'Toggle overlay',
-            menu: 'Datepicker menu',
-            input: 'Datepicker input',
-            calendarWrap: 'Calendar wrapper',
-            calendarDays: 'Calendar days',
-            openTimePicker: 'Open time picker',
-            closeTimePicker: 'Close time Picker',
-            incrementValue: (type: string) => `Increment ${type}`,
-            decrementValue: (type: string) => `Decrement ${type}`,
-            openTpOverlay: (type: string) => `Open ${type} overlay`,
-            amPmButton: 'Switch AM/PM mode',
-            openYearsOverlay: 'Open years overlay',
-            openMonthsOverlay: 'Open months overlay',
-            nextMonth: 'Next month',
-            prevMonth: 'Previous month',
-            day: () => null,
-        },
-        labels,
-    );
-};
 
 export const isModelAuto = (modelValue: ModelValue): boolean => {
     if (Array.isArray(modelValue)) {
         return !!modelValue[0] && !!modelValue[1];
     }
     return false;
+};
+
+export const errors = {
+    prop: (name: string): string => `"${name}" prop must be enabled!`,
+    dateArr: (name: string) => `You need to use array as "model-value" binding in order to support "${name}"`,
+};
+
+export const convertType = <T>(val: any): T => {
+    return val as unknown as T;
+};
+
+export const getNumVal = (num?: string | number | null): number | null => {
+    if (num === 0) return num;
+    if (!num || isNaN(+num)) return null;
+    return +num;
 };

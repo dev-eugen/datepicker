@@ -22,6 +22,11 @@
                 maxValue,
                 escClose,
                 type,
+                arrowNavigation,
+                textInput,
+                autoApply,
+                ariaLabels,
+                hideNavigation,
             }"
             :header-refs="[]"
             @update:model-value="$emit('update:model-value', $event)"
@@ -34,38 +39,51 @@
             <template v-if="$slots[slotName]" #item="{ item }">
                 <slot :name="slotName" :item="item" />
             </template>
+            <template v-if="$slots[overlaySlot]" #overlay>
+                <slot :name="overlaySlot" />
+            </template>
+            <template v-if="$slots[`${overlaySlot}-header`]" #header>
+                <slot :name="`${overlaySlot}-header`" />
+            </template>
         </SelectionGrid>
     </transition>
 </template>
 
 <script lang="ts" setup>
     import { onMounted, ref } from 'vue';
-    import type { PropType } from 'vue';
 
     import SelectionGrid from '@/components/SelectionGrid.vue';
     import { CalendarIcon } from '@/components/Icons';
-    import { useTransitions } from '@/components/composition/transition';
+    import { useTransitions } from '@/components/composables';
 
-    import type { IDefaultSelect } from '@/interfaces';
+    import type { PropType } from 'vue';
+    import type { IDefaultSelect, Transition, AriaLabels, Flow } from '@/interfaces';
 
-    const emit = defineEmits(['update:model-value', 'toggle', 'setRef']);
-    defineProps({
+    const emit = defineEmits(['update:model-value', 'toggle', 'set-ref']);
+    const props = defineProps({
         ariaLabel: { type: String as PropType<string>, default: '' },
         showSelectionGrid: { type: Boolean as PropType<boolean>, default: false },
         modelValue: { type: Number as PropType<number>, default: null },
         items: { type: Array as PropType<IDefaultSelect[][]>, default: () => [] },
         disabledValues: { type: Array as PropType<number[]>, default: () => [] },
-        minValue: { type: Number as PropType<number>, default: null },
-        maxValue: { type: Number as PropType<number>, default: null },
+        minValue: { type: Number as PropType<number | null>, default: null },
+        maxValue: { type: Number as PropType<number | null>, default: null },
         slotName: { type: String as PropType<string>, default: '' },
-        headerRefs: { type: Array as PropType<HTMLElement[]>, default: () => [] },
+        overlaySlot: { type: String as PropType<string>, default: '' },
+        headerRefs: { type: Array as PropType<(HTMLElement | null)[]>, default: () => [] },
         escClose: { type: Boolean as PropType<boolean>, default: true },
         type: { type: String as PropType<'month' | 'year'>, default: null },
+        transitions: { type: [Object, Boolean] as PropType<Transition>, default: false },
+        arrowNavigation: { type: Boolean as PropType<boolean>, default: false },
+        autoApply: { type: Boolean as PropType<boolean>, default: false },
+        textInput: { type: Boolean as PropType<boolean>, default: false },
+        ariaLabels: { type: Object as PropType<AriaLabels>, default: () => ({}) },
+        hideNavigation: { type: Array as PropType<Flow[]>, default: () => [] },
     });
 
-    const { transitionName, showTransition } = useTransitions();
+    const { transitionName, showTransition } = useTransitions(props.transitions);
 
     const elRef = ref(null);
 
-    onMounted(() => emit('setRef', elRef));
+    onMounted(() => emit('set-ref', elRef));
 </script>

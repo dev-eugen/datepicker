@@ -1,7 +1,7 @@
 <template>
     <div
         @click="handleOpen"
-        :aria-label="ariaLabels.input"
+        :aria-label="defaults.ariaLabels?.input"
         role="textbox"
         aria-multiline="false"
         :aria-disabled="disabled"
@@ -37,6 +37,7 @@
                 @blur="handleBlur"
                 @focus="handleFocus"
                 @keypress="handleKeyPress"
+                @keydown="handleKeyPress"
             />
             <span class="dp__input_icon" v-if="$slots['input-icon'] && !hideInputIcon"><slot name="input-icon" /></span>
             <CalendarIcon
@@ -51,6 +52,7 @@
             <CancelIcon
                 v-if="clearable && !$slots['clear-icon'] && inputValue && !disabled && !readonly"
                 class="dp__clear_icon dp__input_icons"
+                data-test="clear-icon"
                 @click.stop.prevent="onClear"
             />
         </div>
@@ -58,24 +60,25 @@
 </template>
 
 <script lang="ts" setup>
-    import { computed, inject, ref } from 'vue';
-    import type { PropType, ComputedRef } from 'vue';
+    import { computed, ref } from 'vue';
 
     import { CalendarIcon, CancelIcon } from '@/components/Icons';
 
-    import type { DynamicClass, AreaLabels } from '@/interfaces';
+    import { parseFreeInput } from '@/utils/date-utils';
+    import { useUtils } from '@/components/composables';
+    import { AllProps } from '@/utils/props';
 
-    import { isValidDate, parseFreeInput } from '@/utils/date-utils';
-    import { ariaLabelsKey, ControlProps, InputProps, SharedProps } from '@/utils/props';
+    import type { PropType } from 'vue';
+    import type { DynamicClass } from '@/interfaces';
 
     const emit = defineEmits([
         'clear',
         'open',
-        'update:inputValue',
-        'setInputDate',
+        'update:input-value',
+        'set-input-date',
         'close',
-        'selectDate',
-        'setEmptyDate',
+        'select-date',
+        'set-empty-date',
         'toggle',
         'focus-prev',
         'focus',
@@ -83,18 +86,16 @@
     ]);
 
     const props = defineProps({
-        ...InputProps,
-        ...ControlProps,
-        ...SharedProps,
-        inputValue: { type: String as PropType<string>, default: '' },
-        inline: { type: Boolean as PropType<boolean>, default: false },
         isMenuOpen: { type: Boolean as PropType<boolean>, default: false },
-        pattern: { type: String as PropType<string>, default: '' },
+        inputValue: { type: String as PropType<string>, default: '' },
+        ...AllProps,
     });
+
+    const { getDefaultPattern, isValidDate, defaults, getDefaultStartTime, assignDefaultTime } = useUtils(props);
+
     const parsedDate = ref();
     const inputRef = ref<HTMLElement | null>(null);
     const isFocused = ref(false);
-    const ariaLabels = inject<ComputedRef<AreaLabels>>(ariaLabelsKey);
 
     const inputClass = computed(
         (): DynamicClass => ({
@@ -111,51 +112,80 @@
         }),
     );
 
-    const handleInput = (event: Event): void => {
-        const { value } = event.target as HTMLInputElement;
-        const { format, rangeSeparator } = props.textInputOptions;
-        if (value !== '') {
-            if (props.textInputOptions?.openMenu && !props.isMenuOpen) {
-                emit('open');
-            }
-            if (props.range) {
-                const [dateOne, dateTwo] = value.split(`${rangeSeparator}`);
+    const handleOnEmptyInput = () => {
+        emit('set-input-date', null);
+        if (props.autoApply) {
+            emit('set-empty-date');
+            parsedDate.value = null;
+        }
+    };
 
-                if (dateOne && dateTwo) {
-                    const parsedDateOne = parseFreeInput(dateOne.trim(), format || props.pattern);
-                    const parsedDateTwo = parseFreeInput(dateTwo.trim(), format || props.pattern);
-                    parsedDate.value = parsedDateOne && parsedDateTwo ? [parsedDateOne, parsedDateTwo] : null;
-                }
-            } else {
-                parsedDate.value = parseFreeInput(value, format || props.pattern);
-            }
+    const parser = (value: string): Date | null => {
+        const defaultTime = getDefaultStartTime();
+        return parseFreeInput(
+            value,
+            defaults.value.textInputOptions?.format || getDefaultPattern(),
+            defaultTime || assignDefaultTime({}),
+            props.inputValue,
+        );
+    };
 
-            emit('setInputDate', parsedDate.value);
+    const handleRangeTextInput = (value: string) => {
+        const { rangeSeparator } = defaults.value.textInputOptions;
+        const [dateOne, dateTwo] = value.split(`${rangeSeparator}`);
+
+        if (dateOne) {
+            const parsedDateOne = parser(dateOne.trim());
+            const parsedDateTwo = dateTwo ? parser(dateTwo.trim()) : null;
+            const parsedArr = parsedDateOne && parsedDateTwo ? [parsedDateOne, parsedDateTwo] : [parsedDateOne];
+            parsedDate.value = parsedDateOne ? parsedArr : null;
+        }
+    };
+
+    const parseInput = (value: string) => {
+        if (props.range) {
+            handleRangeTextInput(value);
         } else {
-            emit('setInputDate', null);
-            if (props.autoApply) {
-                emit('setEmptyDate');
-                parsedDate.value = null;
+            if (props.multiDates) {
+                const dates = value.split(`;`);
+                parsedDate.value = dates.map((val) => parser(val.trim())).filter((val) => val);
+            } else {
+                parsedDate.value = parser(value);
             }
         }
-        emit('update:inputValue', value);
+    };
+
+    const handleInput = (event: Event): void => {
+        const { value } = event.target as HTMLInputElement;
+
+        if (value !== '') {
+            if (defaults.value.textInputOptions?.openMenu && !props.isMenuOpen) {
+                emit('open');
+            }
+            parseInput(value);
+
+            emit('set-input-date', parsedDate.value);
+        } else {
+            handleOnEmptyInput();
+        }
+        emit('update:input-value', value);
     };
 
     const handleEnter = (): void => {
-        if (props.textInputOptions?.enterSubmit && isValidDate(parsedDate.value) && props.inputValue !== '') {
-            emit('setInputDate', parsedDate.value, true);
+        if (defaults.value.textInputOptions?.enterSubmit && isValidDate(parsedDate.value) && props.inputValue !== '') {
+            emit('set-input-date', parsedDate.value, true);
             parsedDate.value = null;
-        } else if (props.textInputOptions?.enterSubmit && props.inputValue === '') {
+        } else if (defaults.value.textInputOptions?.enterSubmit && props.inputValue === '') {
             parsedDate.value = null;
             emit('clear');
         }
     };
 
     const handleTab = (): void => {
-        if (props.textInputOptions?.tabSubmit && isValidDate(parsedDate.value) && props.inputValue !== '') {
-            emit('setInputDate', parsedDate.value, true);
+        if (defaults.value.textInputOptions?.tabSubmit && isValidDate(parsedDate.value) && props.inputValue !== '') {
+            emit('set-input-date', parsedDate.value, true);
             parsedDate.value = null;
-        } else if (props.textInputOptions?.tabSubmit && props.inputValue === '') {
+        } else if (defaults.value.textInputOptions?.tabSubmit && props.inputValue === '') {
             parsedDate.value = null;
             emit('clear');
         }
@@ -166,15 +196,15 @@
         emit('focus');
     };
 
-    const handleOpen = (ev: KeyboardEvent) => {
+    const handleOpen = (ev: KeyboardEvent | MouseEvent) => {
         ev.preventDefault();
         ev.stopImmediatePropagation();
         ev.stopPropagation();
-        if (props.textInput && props.textInputOptions?.openMenu) {
+        if (props.textInput && defaults.value.textInputOptions?.openMenu && !props.inlineWithInput) {
             if (!props.isMenuOpen) {
                 emit('open');
-            } else if (props.textInputOptions.enterSubmit) {
-                emit('selectDate');
+            } else if (defaults.value.textInputOptions.enterSubmit) {
+                emit('select-date');
             }
         } else if (!props.textInput) {
             emit('toggle');
@@ -187,8 +217,8 @@
             emit('blur');
         }
         if (props.autoApply && props.textInput && parsedDate.value) {
-            emit('setInputDate', parsedDate.value);
-            emit('selectDate');
+            emit('set-input-date', parsedDate.value);
+            emit('select-date');
             parsedDate.value = null;
         }
     };
@@ -197,8 +227,9 @@
         emit('clear');
     };
 
-    const handleKeyPress = (ev: KeyboardEvent): boolean | void => {
+    const handleKeyPress = (ev: KeyboardEvent): void => {
         if (!props.textInput) {
+            if (ev.code === 'Tab') return;
             ev.preventDefault();
         }
     };
@@ -209,7 +240,12 @@
         }
     };
 
+    const setParsedDate = (date: Date) => {
+        parsedDate.value = date;
+    };
+
     defineExpose({
         focusInput,
+        setParsedDate,
     });
 </script>

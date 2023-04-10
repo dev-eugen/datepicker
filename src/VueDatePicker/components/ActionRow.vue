@@ -1,84 +1,83 @@
 <template>
     <div class="dp__action_row" :style="calendarWidth ? { width: `${calendarWidth}px` } : {}">
-        <div class="dp__selection_preview">
-            <slot name="action-preview" v-if="$slots['action-preview']" :value="internalModelValue" />
-            <template v-if="!$slots['action-preview']">
-                <template v-if="!Array.isArray(previewValue)">{{ previewValue }}</template>
-                <template v-if="Array.isArray(previewValue)">
-                    <div v-for="(preview, i) in previewValue" :key="i">{{ preview }}</div>
+        <template v-if="$slots['action-row']">
+            <slot
+                name="action-row"
+                v-bind="{
+                    internalModelValue,
+                    disabled,
+                    selectDate: () => $emit('select-date'),
+                    closePicker: () => $emit('close-picker'),
+                }"
+            />
+        </template>
+        <template v-else>
+            <div class="dp__selection_preview">
+                <slot name="action-preview" v-if="$slots['action-preview']" :value="internalModelValue" />
+                <template v-if="!$slots['action-preview']">
+                    <template v-if="!Array.isArray(previewValue)">{{ previewValue }}</template>
+                    <template v-if="Array.isArray(previewValue)">
+                        <div v-for="(preview, i) in previewValue" :key="i">{{ preview }}</div>
+                    </template>
                 </template>
-            </template>
-        </div>
-        <div class="dp__action_buttons">
-            <slot name="action-select" v-if="$slots['action-select']" :value="internalModelValue" />
-            <template v-if="!$slots['action-select']">
-                <span
-                    v-if="!inline"
-                    class="dp__action dp__cancel"
-                    ref="cancelButtonRef"
-                    tabindex="0"
-                    @click="$emit('closePicker')"
-                    @keydown.enter="$emit('closePicker')"
-                    @keydown.space="$emit('closePicker')"
-                    >{{ cancelText }}</span
-                >
-                <span
-                    :class="selectClass"
-                    tabindex="0"
-                    @keydown.enter="selectDate"
-                    @keydown.space="selectDate"
-                    @click="selectDate"
-                    ref="selectButtonRef"
-                    >{{ selectText }}</span
-                >
-            </template>
-        </div>
+            </div>
+            <div class="dp__action_buttons">
+                <slot name="action-select" v-if="$slots['action-select']" :value="internalModelValue" />
+                <template v-if="!$slots['action-select']">
+                    <span
+                        v-if="!inline"
+                        class="dp__action dp__cancel"
+                        ref="cancelButtonRef"
+                        tabindex="0"
+                        @click="$emit('close-picker')"
+                        @keydown.enter="$emit('close-picker')"
+                        @keydown.space="$emit('close-picker')"
+                        >{{ cancelText }}</span
+                    >
+                    <span
+                        :class="selectClass"
+                        tabindex="0"
+                        @keydown.enter="selectDate"
+                        @keydown.space="selectDate"
+                        @click="selectDate"
+                        data-test="select-button"
+                        ref="selectButtonRef"
+                        >{{ selectText }}</span
+                    >
+                </template>
+            </div>
+        </template>
     </div>
 </template>
 
 <script lang="ts" setup>
-    import { computed, inject, onMounted, ref } from 'vue';
-    import type { PropType, ComputedRef, Ref } from 'vue';
-    import type { Locale } from 'date-fns';
+    import { computed, onMounted, ref } from 'vue';
 
-    import { formatDate, getMonthVal, getTImeForExternal, isMonthWithinRange, isValidTime } from '@/utils/date-utils';
-    import { isModelValueRange } from '@/utils/type-guard';
-    import {
-        ActionRowProps,
-        arrowNavigationKey,
-        DateValidationProps,
-        formatLocaleKey,
-        MenuNestedDownProps,
-        NestedInternalSharedProps,
-        TimeValidationProps,
-    } from '@/utils/props';
-    import { useArrowNavigation } from '@/components/composition/arrow-navigate';
-    import { unrefElement } from '@/utils/util';
+    import { convertType, unrefElement } from '@/utils/util';
+    import { useArrowNavigation, useUtils } from '@/components/composables';
+    import { AllProps } from '@/utils/props';
+    import { getDate, isDateAfter, isDateBefore, isDateEqual, resetDate } from '@/utils/date-utils';
 
-    const emit = defineEmits(['closePicker', 'selectDate', 'invalid-select']);
+    import type { PropType } from 'vue';
+    import type { InternalModuleValue } from '@/interfaces';
+
+    const emit = defineEmits(['close-picker', 'select-date', 'invalid-select']);
 
     const props = defineProps({
-        ...ActionRowProps,
-        ...DateValidationProps,
-        ...TimeValidationProps,
-        ...MenuNestedDownProps,
-        ...NestedInternalSharedProps,
-        inline: { type: Boolean as PropType<boolean>, default: false },
-        timePicker: { type: Boolean as PropType<boolean>, default: false },
         calendarWidth: { type: Number as PropType<number>, default: 0 },
         menuMount: { type: Boolean as PropType<boolean>, default: false },
-        enableTimePicker: { type: Boolean as PropType<boolean>, default: true },
+        internalModelValue: { type: [Date, Array] as PropType<InternalModuleValue>, default: null },
+        ...AllProps,
     });
 
+    const { formatDate, isValidTime, defaults } = useUtils(props);
     const { buildMatrix } = useArrowNavigation();
 
-    const formatLocale = inject<ComputedRef<Locale>>(formatLocaleKey);
-    const arrowNavigation = inject<Ref<boolean>>(arrowNavigationKey);
     const cancelButtonRef = ref(null);
     const selectButtonRef = ref(null);
 
     onMounted(() => {
-        if (arrowNavigation?.value) {
+        if (props.arrowNavigation) {
             buildMatrix([unrefElement(cancelButtonRef), unrefElement(selectButtonRef)] as HTMLElement[], 'actionRow');
         }
     });
@@ -89,60 +88,95 @@
             : true;
     });
 
+    const disabled = computed(() => !isTimeValid.value || !isMonthValid.value || !validDateRange.value);
+
     const selectClass = computed(() => ({
         dp__action: true,
         dp__select: true,
-        dp__action_disabled: !isTimeValid.value || !isMonthValid.value || !validDateRange.value,
+        dp__action_disabled: disabled.value,
     }));
 
     const isTimeValid = computed((): boolean => {
         if (!props.enableTimePicker || props.ignoreTimeValidation) return true;
-        return isValidTime(props.internalModelValue, props.maxTime, props.minTime, props.maxDate, props.minDate);
+        return isValidTime(props.internalModelValue);
     });
 
     const isMonthValid = computed((): boolean => {
         if (!props.monthPicker) return true;
-        return isMonthWithinRange(props.internalModelValue as Date, props.minDate, props.maxDate);
+        if (props.range && Array.isArray(props.internalModelValue)) {
+            const invalid = props.internalModelValue.filter((value) => !isMonthWithinRange(value));
+            return !invalid.length;
+        }
+        return isMonthWithinRange(props.internalModelValue as Date);
     });
 
-    const formatWrap = (date: Date | Date[]): string => {
-        return formatDate(date, props.previewFormat as string, formatLocale?.value);
+    const handleCustomPreviewFormat = () => {
+        const formatFn = defaults.value.previewFormat as (val: Date | Date[]) => string | string[];
+
+        if (props.timePicker) return formatFn(convertType(props.internalModelValue));
+
+        if (props.monthPicker) return formatFn(convertType(props.internalModelValue as Date));
+
+        return formatFn(convertType(props.internalModelValue));
+    };
+
+    const formatRangeDate = () => {
+        const dates = props.internalModelValue as Date[];
+        if (defaults.value.multiCalendars > 0) {
+            return `${formatDate(dates[0])} - ${formatDate(dates[1])}`;
+        }
+        return [formatDate(dates[0]), formatDate(dates[1])];
     };
 
     const previewValue = computed((): string | string[] => {
         if (!props.internalModelValue || !props.menuMount) return '';
-        if (typeof props.previewFormat === 'string') {
-            if (isModelValueRange(props.internalModelValue)) {
+        if (typeof defaults.value.previewFormat === 'string') {
+            if (Array.isArray(props.internalModelValue)) {
                 if (props.internalModelValue.length === 2 && props.internalModelValue[1]) {
-                    if (props.multiCalendars > 0) {
-                        return `${formatWrap(props.internalModelValue[0])} - ${formatWrap(
-                            props.internalModelValue[1],
-                        )}`;
-                    }
-                    return [formatWrap(props.internalModelValue[0]), formatWrap(props.internalModelValue[1])];
+                    return formatRangeDate();
                 }
                 if (props.multiDates) {
-                    return props.internalModelValue.map((date) => `${formatWrap(date)}`);
+                    return props.internalModelValue.map((date) => `${formatDate(date)}`);
                 }
                 if (props.modelAuto) {
-                    return `${formatWrap(props.internalModelValue[0])}`;
+                    return `${formatDate(props.internalModelValue[0])}`;
                 }
-                return `${formatWrap(props.internalModelValue[0])} -`;
+                return `${formatDate(props.internalModelValue[0])} -`;
             }
-            return formatDate(props.internalModelValue, props.previewFormat, formatLocale?.value);
+            return formatDate(props.internalModelValue);
         }
-        if (props.timePicker) {
-            return props.previewFormat(getTImeForExternal(props.internalModelValue));
-        }
-        if (props.monthPicker) {
-            return props.previewFormat(getMonthVal(props.internalModelValue as Date));
-        }
-        return props.previewFormat(props.internalModelValue);
+        return handleCustomPreviewFormat();
     });
+
+    const isMonthWithinRange = (date: Date | string): boolean => {
+        if (!props.monthPicker) return true;
+        let valid = true;
+        const dateToCompare = getDate(resetDate(date));
+        if (props.minDate && props.maxDate) {
+            const minDate = getDate(resetDate(props.minDate));
+            const maxDate = getDate(resetDate(props.maxDate));
+            return (
+                (isDateAfter(dateToCompare, minDate) && isDateBefore(dateToCompare, maxDate)) ||
+                isDateEqual(dateToCompare, minDate) ||
+                isDateEqual(dateToCompare, maxDate)
+            );
+        }
+        if (props.minDate) {
+            const minDate = getDate(resetDate(props.minDate));
+
+            valid = isDateAfter(dateToCompare, minDate) || isDateEqual(dateToCompare, minDate);
+        }
+        if (props.maxDate) {
+            const maxDate = getDate(resetDate(props.maxDate));
+            valid = isDateBefore(dateToCompare, maxDate) || isDateEqual(dateToCompare, maxDate);
+        }
+
+        return valid;
+    };
 
     const selectDate = (): void => {
         if (isTimeValid.value && isMonthValid.value && validDateRange.value) {
-            emit('selectDate');
+            emit('select-date');
         } else {
             emit('invalid-select');
         }
