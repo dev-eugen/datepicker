@@ -1,6 +1,7 @@
 <template>
     <div class="wrapper">
         <Datepicker
+            :state="false"
             v-model="selectedDate"
             :markers="[
                 {

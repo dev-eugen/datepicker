@@ -93,7 +93,6 @@
 }
 
 .dp__input_invalid {
-  box-shadow: 0 0 $dp__border_radius var(--dp-danger-color);
   border-color: var(--dp-danger-color);
 
   &:hover {
